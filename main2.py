@@ -1,5 +1,5 @@
 from crewai import Agent, Crew, Process, Task, LLM
-from tools.course_tools import search_courses, get_course, check_user_requirements, retrieve_courses
+from agents import search_courses, get_course, check_user_requirements, retrieve_courses
 from dotenv import load_dotenv
 
 load_dotenv()

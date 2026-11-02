@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 from pydantic import BaseModel, Field
 from crewai import Agent, Crew, Process, Task, LLM
-from tools.course_tools import search_courses, get_course, check_user_requirements, retrieve_courses, course_catalog, courses as raw_courses
+from agents import search_courses, get_course, check_user_requirements, retrieve_courses, course_catalog, courses as raw_courses
 from dotenv import load_dotenv
 
 load_dotenv()
