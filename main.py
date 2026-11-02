@@ -1,41 +1,77 @@
-
 from schedule import check_schedule_conflicts
+from student_inputs import load_student
 from validation import (
-    parse_course_list,
     find_catalog_course,
+    parse_course_list,
     validate_plan,
 )
 from workflow import planning_crew
 
-MAX_ATTEMPTS = 1
+MAX_ATTEMPTS = 2
+STUDENT_ID = "SYNTHETIC_001"
+
+
+def build_required_course_catalog(
+        required_courses: str,
+        completed_courses: str,
+) -> tuple[str, list[str]]:
+    required = parse_course_list(required_courses)
+    completed = parse_course_list(completed_courses)
+    uncompleted = sorted(required - completed)
+
+    if not uncompleted:
+        return "No uncompleted required courses.", []
+
+    details = []
+    missing_codes = []
+
+    for code in uncompleted:
+        row = find_catalog_course(code)
+
+        if row is None:
+            details.append(f"{code}: NOT FOUND in the catalog.")
+            missing_codes.append(code)
+        else:
+            details.append(
+                f"{code}: FOUND. "
+                f"Name: {row['Name']}. "
+                f"Credit hours: {row['Credit Hours']}."
+            )
+
+    return "\n".join(details), missing_codes
+
+
+student = load_student(STUDENT_ID)
 
 base_inputs = {
-    "topic": "machine learning",
-    "priorities": "Required courses first, then prerequisites.",
-    "constraints": "No confirmed current course schedule.",
-    "completed_courses": "CS 101",
-    "required_courses": "CS 101, CS 201, MATH 221",
-    "minimum_credits": 30,
+    "intended_semester": student["intended_semester"],
+    "major": student["major"],
+    "catalog_year": student["catalog_year"],
+    "preferences": student["preferences"],
+    "completed_courses": student["completed_courses"],
+    "current_courses": student["current_courses"],
+    "failed_courses": student["failed_courses"],
+    "required_courses": student["remaining_required_courses"],
+    "remaining_choice_groups": student["remaining_choice_groups"],
+    "min_unit_load": int(student["min_unit_load"]),
+    "unit_limit": int(student["unit_limit"]),
 }
-required_codes = parse_course_list(base_inputs["required_courses"])
-completed_codes = parse_course_list(base_inputs["completed_courses"])
 
-missing_required_codes = sorted(
-    code
-    for code in required_codes - completed_codes
-    if find_catalog_course(code) is None
+(
+    base_inputs["required_course_catalog"],
+    missing_required_codes,
+) = build_required_course_catalog(
+    base_inputs["required_courses"],
+    base_inputs["completed_courses"],
 )
 
 print("\n--- Required course catalog check ---")
 if missing_required_codes:
-    print(
-        "These required course codes aren't in the CSV:",
-        ", ".join(missing_required_codes),
-    )
+    print("Not found:", ", ".join(missing_required_codes))
 else:
-    print("All uncompleted required courses are in the CSV.")
+    print("All uncompleted required courses are in the catalog.")
 
-revision_feedback = "Create the initial plan."
+revision_feedback = "Create the initial semester plan."
 final_plan = None
 final_validation = None
 
@@ -50,82 +86,72 @@ for attempt in range(1, MAX_ATTEMPTS + 1):
             }
         )
     except Exception as exc:
-        print("\n--- Planner output error ---")
+        print("\n--- Planner error ---")
         print(exc)
-        final_plan = None
         final_validation = {
             "passed": False,
-            "issues": [
-                f"Planner returned invalid structured output: {exc}"
-            ],
+            "issues": [f"Planner failed: {exc}"],
         }
         break
 
-    # Get the structured result from the planning task.
-    task_output = result.tasks_output[0]
-    plan = task_output.pydantic
+    task_output = result.tasks_output[0] if result.tasks_output else None
+    plan = task_output.pydantic if task_output else None
 
     if plan is None:
         issues = [
-            "The model did not return a valid GraduationPlan "
-            "structured output. Retry using the required schema."
+            "The planner did not return a valid GraduationPlan."
         ]
-
-        final_plan = None
         final_validation = {
             "passed": False,
             "issues": issues,
         }
-
     else:
-        # Validate actual generated courses, not hardcoded course lists.
+        final_plan = plan
+
         validation = validate_plan(
             plan=plan,
+            min_unit_load=base_inputs["min_unit_load"],
+            unit_limit=base_inputs["unit_limit"],
             required_courses=base_inputs["required_courses"],
             completed_courses=base_inputs["completed_courses"],
-            minimum_credits=base_inputs["minimum_credits"],
+            current_courses=base_inputs["current_courses"],
         )
-
+        final_validation = validation
 
         schedule_result = check_schedule_conflicts(
             [course.code for course in plan.courses]
         )
 
-        print("\n--- Schedule validation ---")
+        print("\n--- Synthetic schedule check (mock data) ---")
         print(schedule_result)
-
-        if not schedule_result["passed"]:
-            print("Schedule requires further review.")
-        else:
-            print("Conflict-free section combination found.")
-            for section in schedule_result["selected_sections"]:
-                print(section)
-
-        final_plan = plan
-        final_validation = validation
 
         print("\n--- Proposed plan ---")
         print(plan.model_dump_json(indent=2))
 
-        print("\n--- Python validation ---")
+        print("\n--- Catalog and unit-range validation ---")
         print(validation)
 
         if validation["passed"]:
-            print("\nPlan passed the implemented Python checks.")
+            print("\nPlan passed catalog and unit-range checks.")
             break
 
         issues = validation["issues"]
+        if not schedule_result["passed"]:
+            issues.extend(
+                f"Mock schedule check: {issue}"
+                for issue in schedule_result["issues"]
+            )
 
-    # Feed only the actual errors back to the next planning attempt.
     revision_feedback = (
-        "Revise your previous plan to address these Python validation "
-        "issues. Keep valid courses, correct invalid details, and add "
-        "verified courses as needed. Do not invent catalog information.\n"
-        + "\n".join(f"- {issue}" for issue in issues)
+            "Revise the plan to address these validation issues. "
+            "Keep valid courses and use only verified catalog information.\n"
+            + "\n".join(f"- {issue}" for issue in issues)
     )
-
 else:
-    print("\nRetry limit reached. Plan still needs review.")
+    print(
+        f"\nPlanning stopped after {MAX_ATTEMPTS} attempt(s). "
+        "The plan may need review."
+    )
 
 if final_plan is not None:
     print("\n--- Final plan ---")
@@ -134,26 +160,3 @@ if final_plan is not None:
 if final_validation is not None:
     print("\n--- Final validation status ---")
     print(final_validation)
-
-#
-# test_plan = GraduationPlan(
-#     courses=[
-#         PlannedCourse(
-#             code="CS 201",
-#             name="Intentionally incorrect name",
-#             credit_hours=4,
-#             reason="Testing catalog validation.",
-#         )
-#     ],
-#     assumptions=[],
-#     unresolved_questions=[],
-# )
-#
-# test_result = validate_plan(
-#     plan=test_plan,
-#     required_courses="CS 101, CS 201, MATH 221",
-#     completed_courses="CS 101",
-#     minimum_credits=30,
-# )
-#
-# print(test_result)

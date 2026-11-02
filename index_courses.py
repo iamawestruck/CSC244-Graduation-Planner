@@ -2,17 +2,19 @@ from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 import pandas as pd
-
+from pathlib import Path
 embeddings = OllamaEmbeddings(model = "mxbai-embed-large", base_url="http://localhost:11434") #need to type "ollama pull mxbai-embed-large" to get to work
+PROJECT_ROOT = Path(__file__).resolve().parent
+CSV_PATH = PROJECT_ROOT / "data" / "sac_state_courses.csv"
+CHROMA_PATH = PROJECT_ROOT / "school_courses"
 vector_store = Chroma(
-    collection_name="school_courses",
+    collection_name="sac_state_courses",
     embedding_function=embeddings,
-    persist_directory="./school_courses"
+    persist_directory=str(CHROMA_PATH),
 )
 
-df = pd.read_csv("C:/Users/eharr/CSC244 Semester Project/graduation_planner/data/uiuc_courses.csv").fillna("")
-df = df.drop_duplicates( subset=["Subject", "Number", "Name", "Description", "Start Time"])
-
+df = pd.read_csv(CSV_PATH, dtype=str, keep_default_na=False)
+df = df[df["Section Status"] != "SYNTHETIC - NOT REAL"]
 csv_list = df.to_dict(orient="records")
 
 csv_docs = [Document(
@@ -21,21 +23,12 @@ csv_docs = [Document(
         f"Name: {doc['Name']}\n"
         f"Description: {doc['Description']}\n"
         f"Credit Hours: {doc['Credit Hours']}\n"
-        f"Degree Attributes: {doc['Degree Attributes']}\n"
-        f"Year: {doc['Year']}\n"
-        f"Term: {doc['Term']}\n"
-        f"Days: {doc['Days of Week']}\n"
-        f"Time: {doc['Start Time']} to {doc['End Time']}"), 
+        f"Degree Attributes: {doc['Degree Attributes']}\n"),
     metadata={
         "source": "csv",
         "subject": str(doc["Subject"]),
         "number": str(doc["Number"]),
-        "name": str(doc["Name"]),
-        "year": str(doc["Year"]),
-        "term": str(doc["Term"]),
-        "days": str(doc['Days of Week']),
-        "start_time": str(doc["Start Time"]),
-        "end_time": str(doc["End Time"])
+        "name": str(doc["Name"])
     }
 )for doc in csv_list]
 
