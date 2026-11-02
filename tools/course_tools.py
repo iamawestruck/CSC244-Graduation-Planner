@@ -54,7 +54,7 @@ def retrieve_courses(query: str) -> str:
 
 @tool("Search UIUC course catalog")
 def search_courses(query: str) -> str:
-    """Search Fall 2019 UIUC courses by course name or description.
+    """Search the given semester UIUC courses by course name or description.
     Use this to find courses matching a subject or topic."""
 
     name_matches = course_catalog["Name"].fillna("").str.contains(
@@ -77,9 +77,11 @@ def search_courses(query: str) -> str:
         "Description",
     ]
 
-    return matches[columns].head(20).to_string(index=False)
-
-
+    short_results = matches[columns].head(5).copy()
+    short_results["Description"] = (
+        short_results["Description"].fillna("").str.slice(0, 350)
+    )
+    return short_results.to_string(index=False)
 @tool("Get UIUC course details")
 def get_course(subject: str, number: str) -> str:
     """Look up a specific course using its department and course number.
@@ -96,7 +98,7 @@ def get_course(subject: str, number: str) -> str:
     row = matches.iloc[0]
 
     return (
-        f"Catalog period: Fall 2019\n"
+        f"Catalog period: {row['Term']} {row['Year']}\n"
         f"Course: {row['Subject']} {row['Number']}\n"
         f"Name: {row['Name']}\n"
         f"Credit Hours: {row['Credit Hours']}\n"
