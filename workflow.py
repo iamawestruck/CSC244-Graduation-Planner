@@ -1,7 +1,11 @@
 from crewai import Crew, Process, Task
-from agents.planning_agent import planning_agent
-from agents.requirement_agent import requirement_agent
+
+try:
+    from agents.planning_agent import planning_agent
+except ModuleNotFoundError:
+    from planning_agent import planning_agent
 from models import GraduationPlan
+
 
 graduation_task = Task(
     description=(
@@ -15,43 +19,33 @@ graduation_task = Task(
         "Remaining required courses: {required_courses}\n"
         "Remaining choice groups: {remaining_choice_groups}\n"
         "Allowed semester unit range: {min_unit_load} to {unit_limit} units.\n\n"
-        "Required-course catalog lookup:\n"
-        "{required_course_catalog}\n\n"
-        "Use only course codes that appear exactly in the required-course "
-        "lookup or retrieved catalog records. Do not invent course codes "
-        "or names. Build a tentative plan of 12–18 units from verified "
-        "courses. If prerequisites or Spring 2027 availability are unknown, "
-        "mention that in unresolved_questions rather than inventing courses "
-        "or returning an empty plan.\n\n"
-        "Previous Python validation feedback:\n"
-        "{revision_feedback}\n\n"
-        "Use the course retrieval tool before recommending courses. "
-        "Use only courses supported by the retrieved catalog records, "
-        "with their exact course codes, names, and credit hours.\n"
-        "Include a brief reason for each proposed course.\n"
-        "Treat every course in Remaining required courses as unfinished. "
-        "Never claim all requirements are complete while that list is nonempty.\n"
-        "Call a course a remaining required course only if its exact code "
-        "appears in that list. Label other courses as choice-group courses "
-        "only when the catalog confirms the group.\n"
-        "Schedule eligible remaining required courses first, then add "
-        "verified choice-group courses that fit. Keep the total within the "
-        "unit range above. If verified eligible courses cannot reach the "
-        "minimum, explain why in unresolved_questions.\n"
-        "Do not try to fit every remaining degree requirement into one "
-        "semester. Treat current courses as not yet completed. Do not assume "
-        "a failed course should be retaken unless the inputs say so. Do not "
-        "claim a course is offered this semester unless the data confirms it. "
-        "Put missing information and questions in unresolved_questions.\n"
+        "Verified required-course lookup:\n{required_course_catalog}\n\n"
+        "CSV-derived course candidates (the allowed source for this plan):\n"
+        "{course_candidates}\n\n"
+        "Previous Python validation feedback:\n{revision_feedback}\n\n"
+        "Choose courses from the candidate list above. Do not create or alter "
+        "course codes, names, credits, prerequisites, or requirement groups. "
+        "Prioritize eligible unfinished required courses, then use eligible "
+        "choice-group candidates only as needed to reach the minimum load.\n"
+        "The listed prerequisite conditions must be satisfied by completed "
+        "courses. Treat a prerequisite as concurrent only when the catalog "
+        "explicitly says it may be concurrent and the course is also in this "
+        "plan. Do not include courses with unmet or non-course prerequisite "
+        "conditions.\n"
+        "Give each course a short reason. Keep the total within the allowed "
+        "range. The course CSV is a catalog snapshot and its schedule rows are "
+        "synthetic, so do not claim an actual Spring 2027 section is available. "
+        "Put unresolved offering, prerequisite, or degree-rule details in "
+        "unresolved_questions. Do not claim official graduation eligibility.\n"
     ),
     expected_output=(
-        "A GraduationPlan with proposed courses, exact catalog details, "
-        "reasons, assumptions, and unresolved questions."
+        "A GraduationPlan containing a preliminary semester course list, exact "
+        "catalog details, reasons, assumptions, and unresolved questions."
     ),
     output_pydantic=GraduationPlan,
     agent=planning_agent,
 )
-#Crew + Running
+
 
 planning_crew = Crew(
     agents=[planning_agent],

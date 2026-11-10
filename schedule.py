@@ -1,7 +1,11 @@
+
 import re
 from datetime import datetime
 
-from tools.course_tools import courses as raw_courses
+try:
+    from tools.course_tools import courses as raw_courses
+except ModuleNotFoundError:
+    from course_tools import courses as raw_courses
 
 
 def normalize_days(value):
@@ -91,76 +95,3 @@ def check_schedule_conflicts(course_codes):
             start = parse_meeting_time(row["Start Time"])
             end = parse_meeting_time(row["End Time"])
 
-            if not days or start is None or end is None or start >= end:
-                continue
-
-            options.append({
-                "days": days,
-                "start": start,
-                "end": end,
-                "display": (
-                    f"{row['Subject']} {row['Number']} "
-                    f"Section {row.get('Section', '')}: "
-                    f"{row['Days of Week']} "
-                    f"{row['Start Time']}-{row['End Time']}"
-                ),
-            })
-
-        return options
-
-    def overlaps(section_a, section_b):
-        shared_days = section_a["days"] & section_b["days"]
-        return bool(shared_days) and (
-                section_a["start"] < section_b["end"]
-                and section_b["start"] < section_a["end"]
-        )
-
-    for term in sorted(common_terms):
-        options_by_course = {
-            code: get_options(rows, term)
-            for code, rows in course_rows.items()
-        }
-
-        if any(not options for options in options_by_course.values()):
-            continue
-
-        ordered_courses = sorted(
-            options_by_course,
-            key=lambda code: len(options_by_course[code]),
-        )
-        selected = []
-
-        def find_combination(index):
-            if index == len(ordered_courses):
-                return True
-
-            code = ordered_courses[index]
-            for option in options_by_course[code]:
-                if any(overlaps(option, chosen) for chosen in selected):
-                    continue
-
-                selected.append(option)
-                if find_combination(index + 1):
-                    return True
-                selected.pop()
-
-            return False
-
-        if find_combination(0):
-            return {
-                "passed": True,
-                "term": term,
-                "issues": [],
-                "selected_sections": [
-                    option["display"] for option in selected
-                ],
-            }
-
-    return {
-        "passed": False,
-        "issues": [
-            "No conflict-free combination of sections with known meeting "
-            "days and times was found."
-        ],
-        "selected_sections": [],
-    }

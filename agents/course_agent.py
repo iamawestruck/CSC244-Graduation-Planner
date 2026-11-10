@@ -1,6 +1,10 @@
+
 from crewai import Agent
 from llm_config import local_llm
-from tools.course_tools import search_courses, get_course
+try:
+    from tools.course_tools import search_courses, get_course
+except ModuleNotFoundError:
+    import course_tools
 
 
 course_agent = Agent(
@@ -19,3 +23,4 @@ course_agent = Agent(
     allow_delegation=False,
     verbose=True,
 )
+
