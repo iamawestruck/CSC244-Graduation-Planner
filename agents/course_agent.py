@@ -4,7 +4,7 @@ from llm_config import local_llm
 try:
     from tools.course_tools import search_courses, get_course
 except ModuleNotFoundError:
-    import course_tools
+    import tools.course_tools
 
 
 course_agent = Agent(

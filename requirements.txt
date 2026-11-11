@@ -5,3 +5,5 @@ langchain-ollama
 pandas>=2.0
 pydantic>=2.0
 python-dotenv
+python>=3.10
+python<3.14

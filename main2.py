@@ -84,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             from tools.course_tools import course_catalog
         except ModuleNotFoundError:
-            from course_tools import course_catalog
+            from tools.course_tools import course_catalog
 
         profile = load_student(args.student_id)
         inputs = _build_inputs(profile, course_catalog)

@@ -5,7 +5,7 @@ from datetime import datetime
 try:
     from tools.course_tools import courses as raw_courses
 except ModuleNotFoundError:
-    from course_tools import courses as raw_courses
+    from tools.course_tools import courses as raw_courses
 
 
 def normalize_days(value):
