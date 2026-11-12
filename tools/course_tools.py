@@ -1,8 +1,6 @@
 import re
 from pathlib import Path
-
 import pandas as pd
-
 
 try:
     from crewai.tools import tool
@@ -115,7 +113,7 @@ def retrieve_courses(query: str) -> str:
         )
 
     try:
-        results = vector_store.similarity_search(query=query, k=8)
+        results = vector_store.similarity_search(query=query, k=5)
     except Exception as exc:
         return f"Vector search is unavailable: {exc}"
 

@@ -1,10 +1,7 @@
 import re
-
 from models import GraduationPlan
-try:
-    from tools.course_tools import course_catalog
-except ModuleNotFoundError:
-    from course_tools import course_catalog
+from tools.course_tools import course_catalog
+
 
 
 def normalize_course_code(code: str) -> str:

@@ -1,10 +1,7 @@
-
 from crewai import Agent
 from llm_config import local_llm
-try:
-    from tools.course_tools import retrieve_courses, search_courses, get_course
-except ModuleNotFoundError:
-    import tools.course_tools
+from tools.course_tools import retrieve_courses, search_courses, get_course
+
 
 
 planning_agent = Agent(

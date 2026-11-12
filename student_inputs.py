@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import pandas as pd
 
 
@@ -13,13 +12,13 @@ STUDENTS_CSV = next(
     (
         candidate
         for candidate in (
-        PROJECT_ROOT / "data" / "sac_state_students.csv",
-        PROJECT_ROOT / "sac_state_students.csv",
-    )
+            PROJECT_ROOT / "data" / "sac_state_students.csv",
+            PROJECT_ROOT / "sac_state_students.csv",
+        )
         if candidate.is_file()
     ),
     PROJECT_ROOT / "data" / "sac_state_students.csv",
-    )
+)
 
 
 def load_student(student_id: str | None = None) -> dict[str, str]:

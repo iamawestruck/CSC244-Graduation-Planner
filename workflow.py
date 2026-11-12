@@ -1,9 +1,5 @@
 from crewai import Crew, Process, Task
-
-try:
-    from agents.planning_agent import planning_agent
-except ModuleNotFoundError:
-    from planning_agent import planning_agent
+from agents.planning_agent import planning_agent
 from models import GraduationPlan
 
 

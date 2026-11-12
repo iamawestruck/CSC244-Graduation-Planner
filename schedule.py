@@ -1,11 +1,7 @@
-
 import re
 from datetime import datetime
+from tools.course_tools import courses as raw_courses
 
-try:
-    from tools.course_tools import courses as raw_courses
-except ModuleNotFoundError:
-    from tools.course_tools import courses as raw_courses
 
 
 def normalize_days(value):
@@ -21,9 +17,12 @@ def parse_meeting_time(value):
     """Parse times such as '09:00 AM'; return None if unavailable."""
     value = str(value).strip().upper()
 
-    if not value or value == "ARRANGED":
+    if not value:
         return None
 
+    if value == "ARRANGED":
+        return "CUSTOM"
+    
     try:
         return datetime.strptime(value, "%I:%M %p").time()
     except ValueError:
