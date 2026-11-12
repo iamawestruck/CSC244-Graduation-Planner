@@ -1,5 +1,6 @@
 from crewai import Crew, Process, Task
 from agents.planning_agent import planning_agent
+from agents.course_agent import course_agent
 from models import GraduationPlan
 
 
@@ -18,7 +19,7 @@ graduation_task = Task(
         "Verified required-course lookup:\n{required_course_catalog}\n\n"
         "CSV-derived course candidates (the allowed source for this plan):\n"
         "{course_candidates}\n\n"
-        "Previous Python validation feedback:\n{revision_feedback}\n\n"
+        #"Previous Python validation feedback:\n{revision_feedback}\n\n"
         "Choose courses from the candidate list above. Do not create or alter "
         "course codes, names, credits, prerequisites, or requirement groups. "
         "Prioritize eligible unfinished required courses, then use eligible "
@@ -44,7 +45,7 @@ graduation_task = Task(
 
 
 planning_crew = Crew(
-    agents=[planning_agent],
+    agents=[planning_agent, course_agent],
     tasks=[graduation_task],
     process=Process.sequential,
     verbose=True,

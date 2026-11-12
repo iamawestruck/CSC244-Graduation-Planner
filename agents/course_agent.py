@@ -5,7 +5,7 @@ from tools.course_tools import search_courses, get_course
 
 
 course_agent = Agent(
-    role="University Course Catalog Researcher",
+    role="Course Catalog Researcher",
     goal=(
         "Find relevant courses and verify their details "
         "using the provided course catalog tools."

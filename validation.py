@@ -52,15 +52,16 @@ def credit_hours_allowed(catalog_value: str, selected: int) -> bool:
         return numbers[0] <= selected <= numbers[1]
 
     return selected == numbers[0]
-def validate_plan(
 
+def validate_plan(
         plan: GraduationPlan,
         min_unit_load: int,
-        unit_limit: int,
+        unit_limit: int, #What is this for?
         required_courses: str = "",
         completed_courses: str = "",
         current_courses: str = "",
 ) -> dict:
+    
     """Check catalog details, course repeats, required-course priority, and unit range."""
     issues = []
     planned_codes = [
@@ -91,3 +92,19 @@ def validate_plan(
             issues.append(
                 f"{code} has an invalid credit amount: {selected_credits}."
             )
+        else:
+            total_planned_credits += selected_credits
+
+    if total_planned_credits < min_unit_load:
+        issues.append(
+            f"Planned credits ({total_planned_credits}) are below the required minimum of ({min_unit_load})."
+        )
+
+    limitations = []
+
+    return {
+        "passed": not issues,
+        "planned_credit_hours": total_planned_credits,
+        "issues": issues,
+        "limitations": limitations
+    }

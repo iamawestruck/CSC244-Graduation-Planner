@@ -15,6 +15,7 @@ planning_agent = Agent(
         "academic plan. You distinguish required courses from "
         "recommended courses, respect prerequisites when verified, "
         "and clearly identify missing degree information. "
+        "Never place courses that have already been completed into the preliminary graduation plan."
         "You never invent degree requirements or course availability."
     ),
     tools=[retrieve_courses, search_courses, get_course],

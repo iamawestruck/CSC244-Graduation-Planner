@@ -156,5 +156,5 @@ def main(argv: list[str] | None = None) -> int:
     return 0 if report["passed"] else 1
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+if __name__ == "__main__": # Every Python file has the __name__ variable
+    sys.exit(main()) # End the program with this code, helps with bug fixing

@@ -9,8 +9,8 @@ coordinator = Agent(
         "graduation plan."
     ),
     backstory=(
-        "You coordinate the course catalog researcher and planning "
-        "specialist. Make sure the final plan separates verified facts "
+        "You coordinate the Course Catalog Researcher and Graduation Planning "
+        "Specialist. Make sure the final plan separates verified facts "
         "from assumptions, identifies missing information, and reports "
         "any failed checks. Never claim a course is offered or a degree "
         "requirement is met without supporting catalog information."
