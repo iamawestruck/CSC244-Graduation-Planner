@@ -3,12 +3,12 @@ import json
 import sys
 from typing import Any
 
-
+# Pulls a field out of a dictionary as a clean string
 def _text(profile: dict[str, Any], field: str, default: str = "Not provided") -> str:
     value = str(profile.get(field, "")).strip()
     return value or default
 
-
+# Pulls a field out of a dictionary as a clean int or clear error
 def _number(profile: dict[str, Any], field: str, default: int) -> int:
     value = str(profile.get(field, "")).strip()
     if not value:
@@ -18,7 +18,7 @@ def _number(profile: dict[str, Any], field: str, default: int) -> int:
     except ValueError as exc:
         raise ValueError(f"Student field {field!r} must be a whole number; got {value!r}.") from exc
 
-
+# Takes comma seperated string of code, strips, capitalizes, and joins them
 def _parse_codes(value: str) -> list[str]:
     return [" ".join(code.strip().upper().split()) for code in value.split(",") if code.strip()]
 
@@ -62,7 +62,7 @@ def _build_inputs(profile: dict[str, Any], course_catalog) -> dict[str, Any]:
         "required_courses": required_courses or "None supplied",
         "remaining_choice_groups": _text(profile, "remaining_choice_groups", "None supplied"),
         "min_unit_load": _number(profile, "min_unit_load", 0),
-        "unit_limit": _number(profile, "unit_limit", 18),
+        "max_unit_load": _number(profile, "max_unit_load", 18),
         "required_course_catalog": "\n".join(required_rows) or "No required course codes supplied.",
         "course_candidates": candidates or "No non-synthetic course rows were found.",
         "revision_feedback": "No earlier validation attempt.",
