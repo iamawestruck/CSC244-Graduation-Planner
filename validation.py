@@ -59,7 +59,7 @@ def validate_plan(
         max_unit_load: int, 
         required_courses: str = "", # All required courses wouldn't be capable of fitting into a semester plan, remove?
         completed_courses: str = "",
-        current_courses: str = "",
+
 ) -> dict:
     
     """Check catalog details, course repeats, required-course priority, and unit range."""
@@ -77,14 +77,12 @@ def validate_plan(
         issues.append(f"Duplicate courses in plan: {', '.join(duplicates)}")
 
     completed = parse_course_list(completed_courses)
-    current = parse_course_list(current_courses)
-    already_taken = completed | current
 
     total_planned_credits = 0
     catalog_verified = []
 
     for course, code in zip(plan.courses, planned_codes):
-        if code in already_taken:
+        if code in completed:
             issues.append(f"{code} is already completed or in progress.")
 
         selected_credits = course.credit_hours
@@ -97,12 +95,12 @@ def validate_plan(
 
     if total_planned_credits < min_unit_load:
         issues.append(
-            f"Planned credits ({total_planned_credits}) are below the required minimum of ({min_unit_load} units)."
+            f"Planned credits ({total_planned_credits}) are below the required minimum of ({min_unit_load})."
         )
 
     if total_planned_credits > max_unit_load:
         issues.append(
-            f"Planned credits ({total_planned_credits}) are above the required maximum of ({max_unit_load} units.)"
+            f"Planned credits ({total_planned_credits}) are above the required maximum of ({max_unit_load})."
         )
 
     limitations = []
