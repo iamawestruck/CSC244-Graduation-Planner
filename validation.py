@@ -56,8 +56,8 @@ def credit_hours_allowed(catalog_value: str, selected: int) -> bool:
 def validate_plan(
         plan: GraduationPlan,
         min_unit_load: int,
-        unit_limit: int, #What is this for?
-        required_courses: str = "",
+        max_unit_load: int, 
+        required_courses: str = "", # All required courses wouldn't be capable of fitting into a semester plan, remove?
         completed_courses: str = "",
         current_courses: str = "",
 ) -> dict:
@@ -97,7 +97,12 @@ def validate_plan(
 
     if total_planned_credits < min_unit_load:
         issues.append(
-            f"Planned credits ({total_planned_credits}) are below the required minimum of ({min_unit_load})."
+            f"Planned credits ({total_planned_credits}) are below the required minimum of ({min_unit_load} units)."
+        )
+
+    if total_planned_credits > max_unit_load:
+        issues.append(
+            f"Planned credits ({total_planned_credits}) are above the required maximum of ({max_unit_load} units.)"
         )
 
     limitations = []

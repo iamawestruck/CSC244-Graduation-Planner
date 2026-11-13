@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Graduation Planner Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <form action="user_submission" method="POST">
+        <label for="sid">Student ID:</label>
+        <input type="text" id="sid" name="sid" placeholder="Enter your student id" required>
+
+        <label for="schools">Select your college:</label>
+        <select id="schools" name="school">
+            <option value="csus">California State University, Sacramento</option>
+            <option value="csuc">California State University, Chico</option>
+            <option value="csuf">California State University, Fresno</option>
+        </select>
+
+        <label for="major">Major Tag:</label>
+        <input type="text" id="major" name="major" placeholder="CS">
+
+        <label for="min_unit_load">Minimum Units:</label>
+        <input type="text" id="min_unit_load" name="min_unit_load" placeholder="12">
+
+        <label for="max_unit_load">Maximum Units:</label>
+        <input type="text" id="max_unit_load" name="max_unit_load" placeholder="12">
+
+        <button type="submit">Submit</button>
+        </form>
+
+<pre id="output"></pre>
+
+<script> src="script.js"</script>
+
+</body>
+</html>
