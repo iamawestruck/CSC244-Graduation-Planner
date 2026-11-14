@@ -4,6 +4,7 @@ from typing import Any
 from student_inputs import load_student
 from tools.course_tools import course_catalog
 from validation import validate_plan
+from course_counts import course_count_issues, summarize_course_counts
 
 # Pulls a field out of a dictionary as a clean string
 def _text(profile: dict[str, Any], field: str, default: str = "Not provided") -> str:
@@ -78,11 +79,24 @@ def main(argv: list[str] | None = None) -> int:
         "--student-id",
         help="Student profile ID. If there is only one profile in the CSV, it is selected automatically.",
     )
+    parser.add_argument(
+        "--dept-course-count",
+        type=int,
+        help="Fixed number of courses the department selected for the semester (optional).",
+    )
     args = parser.parse_args(argv)
 
     try: # Tests to see if profile loads properly
         profile = load_student(args.student_id)
         inputs = _build_inputs(profile, course_catalog)
+        counts = summarize_course_counts(
+            course_catalog,
+            _text(profile, "remaining_required_courses", ""),
+            _text(profile, "completed_courses", ""),
+            inputs["min_unit_load"],
+            inputs["max_unit_load"],
+            args.dept_course_count,
+        )
     except Exception as exc:
         print(f"Could not load planning inputs: {exc}", file=sys.stderr)
         return 1 # Returning a 1 tells Python we encountered an error, a 0 means the program ran fine 
@@ -97,7 +111,15 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:
         print(f"The planner could not be initialized: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
-
+    print(f"Remaining required courses: {counts['remaining_required_total']} {counts['by_department']}")
+    expected = counts["unit_range_course_count"]
+    print(
+        f"Courses expected for {inputs['min_unit_load']}-{inputs['max_unit_load']} units: "
+        f"{expected['min']} to {expected['max']}"
+    )
+    if args.dept_course_count is not None:
+        print(f"Department-selected course count: {args.dept_course_count}")
+        
     print(f"Creating a preliminary plan for {_text(profile, 'intended_semester')}...")
     try:
         result = planning_crew.kickoff(inputs=inputs)
@@ -135,7 +157,15 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:
         print(f"\nPlan validation could not run: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
-
+    count_issues = course_count_issues(
+        len(plan.courses),
+        inputs["min_unit_load"],
+        inputs["max_unit_load"],
+        args.dept_course_count,
+    )
+    report["issues"].extend(count_issues)
+    report["passed"] = report["passed"] and not count_issues
+    
     status = "PASS" if report["passed"] else "REVIEW NEEDED" # Shows up at the end of the program, checks if preliminary program passes our manual checks
     print(f"\n===== PYTHON VALIDATION: {status} =====")
     print(f"Planned credits: {report['planned_credit_hours']}")
