@@ -1,6 +1,7 @@
 from crewai import Crew, Process, Task
 from agents.planning_agent import planning_agent
 from agents.course_agent import course_agent
+from agents.coordinator_agent import coordinator
 from models import GraduationPlan
 
 #Need to be as specific as possible, but not so specific its rigid
@@ -37,14 +38,15 @@ graduation_task = Task(
         "A GraduationPlan containing a preliminary semester course list, exact "
         "catalog details, reasons, assumptions, and unresolved questions."
     ),
-    output_pydantic=GraduationPlan,
+    output_pydantic=GraduationPlan, # Formats Crew's final response to match this model
     agent=planning_agent,
 )
 
 # This could be a few different files, kept here for simplification
 planning_crew = Crew(
     agents=[planning_agent, course_agent],
+    #manager_agent=[coordinator],
     tasks=[graduation_task],
-    process=Process.sequential,
+    process=Process.sequential, # Process.sequential required
     verbose=True,
 )
