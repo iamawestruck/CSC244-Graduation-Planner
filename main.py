@@ -21,7 +21,7 @@ def _number(profile: dict[str, Any], field: str, default: int) -> int:
         raise ValueError(f"Student field {field!r} must be a whole number; got {value!r}.") from exc
 
 # Takes seperated string variables, strips, capitalizes, and joins them into a list
-def _parse_codes(value: str) -> list[str]:
+def parse_course_set(value: str) -> list[str]:
     return [" ".join(code.strip().upper().split()) for code in value.split(",") if code.strip()]
 
 # Organizes the course entree into a different format, makes it easily readible to AI agent
@@ -37,7 +37,7 @@ def _course_text(row) -> str:
 def _build_inputs(profile: dict[str, Any], course_catalog) -> dict[str, Any]:
     required_courses = _text(profile, "remaining_required_courses", "")
     required_rows = []
-    for code in _parse_codes(required_courses):
+    for code in parse_course_set(required_courses):
         parts = code.split(maxsplit=1)
         if len(parts) != 2: # If split isn't exactly 2, give this. Would this be better in the _parse_codes function?
             required_rows.append(f"{code}: invalid course-code format")

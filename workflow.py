@@ -3,7 +3,7 @@ from agents.planning_agent import planning_agent
 from agents.course_agent import course_agent
 from models import GraduationPlan
 
-
+#Need to be as specific as possible, but not so specific its rigid
 graduation_task = Task(
     description=(
         "Create a preliminary course plan for {intended_semester}.\n"
@@ -41,7 +41,7 @@ graduation_task = Task(
     agent=planning_agent,
 )
 
-
+# This could be a few different files, kept here for simplification
 planning_crew = Crew(
     agents=[planning_agent, course_agent],
     tasks=[graduation_task],

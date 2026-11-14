@@ -3,13 +3,13 @@ from models import GraduationPlan
 from tools.course_tools import course_catalog
 
 
-
+# Standardizes different formats of codes for further use, overlaps with _parse_codes 
 def normalize_course_code(code: str) -> str:
     return " ".join(str(code).strip().upper().split())
 
 
-def parse_course_list(value: str) -> set[str]:
-    """Convert a comma-separated course list to normalized codes."""
+# Converts individual courses into a normalized course set
+def parse_course_set(value: str) -> set[str]:
     return {
         normalize_course_code(course)
         for course in str(value or "").split(",")
@@ -76,10 +76,10 @@ def validate_plan(
     if duplicates:
         issues.append(f"Duplicate courses in plan: {', '.join(duplicates)}")
 
-    completed = parse_course_list(completed_courses)
+    completed = parse_course_set(completed_courses)
 
     total_planned_credits = 0
-    catalog_verified = []
+    # catalog_verified = []
 
     for course, code in zip(plan.courses, planned_codes):
         if code in completed:

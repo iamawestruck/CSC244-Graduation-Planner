@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-
+#defines new classes we use in our code
 class PlannedCourse(BaseModel):
     code: str = Field(description="Course code, such as CSC 131")
     name: str = Field(description="Course name verified in the catalog")
