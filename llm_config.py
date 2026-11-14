@@ -8,4 +8,5 @@ local_llm = LLM(
     base_url="http://localhost:11434/v1",
     api_key="ollama",
     custom_openai=True,
+    context_window_size=4096,
 )
