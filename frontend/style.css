@@ -39,3 +39,41 @@ text {
 input[aria-invalid="true"] {
     border-color: #b42318;
 }
+
+
+/* Plan results (used by script.js) */
+#plan h2 {
+    margin: 20px 0 8px;
+    font-size: 1.1rem;
+}
+
+#plan table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+#plan th,
+#plan td {
+    padding: 8px;
+    border-bottom: 1px solid #e4e7eb;
+    text-align: left;
+    vertical-align: top;
+}
+
+#plan th {
+    background-color: #f5f7fa;
+}
+
+.plan-summary {
+    color: #52606d;
+    margin: 0 0 8px;
+}
+
+.validation-pass {
+    color: #0a7a3d;
+}
+
+.validation-review {
+    color: #b42318;
+}
