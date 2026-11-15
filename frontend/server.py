@@ -24,6 +24,7 @@ STATIC_FILES = {
     "/index.html": ("index.html", "text/html; charset=utf-8"),
     "/style.css": ("style.css", "text/css; charset=utf-8"),
     "/script.js": ("script.js", "application/javascript; charset=utf-8"),
+    "/campus-background-v2.svg": ("campus-background-v2.svg", "image/svg+xml"),
 }
 
 MAX_BODY_BYTES = 10_000
