@@ -9,6 +9,10 @@ body {
     margin: 0;
     padding: 32px 16px;
     background-color: #f0f2f5;
+    background-image: url("campus-background-v2.svg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
 }
 
 #app-container {
