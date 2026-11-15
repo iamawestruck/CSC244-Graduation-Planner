@@ -1,27 +1,81 @@
-/*This is a base format from another program I worked on, needs changing*/
+* { box-sizing: border-box; }
 
 body {
     font-family: sans-serif;
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 100vh;
+    align-items: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    padding: 32px 16px;
     background-color: #f0f2f5;
 }
+
 #app-container {
-    text-align: center;
-    padding: 20px;
+    width: 100%;
+    max-width: 520px;
+    padding: 24px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
-text {
+
+h1 {
+    margin-top: 0;
+    text-align: center;
+}
+
+label {
+    display: block;
+    margin: 14px 0 4px;
+    font-weight: 600;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cbd2d9;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+input:focus,
+select:focus,
+button:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 1px;
+}
+
+.row {
+    display: flex;
+    gap: 16px;
+}
+
+.row > div {
+    flex: 1;
+}
+
+button {
+    width: 100%;
+    margin-top: 20px;
     padding: 10px 20px;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 4px;
+    font-size: 1rem;
     cursor: pointer;
+}
+
+button:hover {
+    background-color: #0069d9;
+}
+
+#output {
+    margin-top: 20px;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 /* Form messages (used by script.js) */
@@ -39,7 +93,6 @@ text {
 input[aria-invalid="true"] {
     border-color: #b42318;
 }
-
 
 /* Plan results (used by script.js) */
 #plan h2 {
