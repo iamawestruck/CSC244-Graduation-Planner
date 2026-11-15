@@ -143,7 +143,12 @@ def search_courses(query: str) -> str:
         description_matches = course_catalog["Description"].str.contains(
             query, case=False, na=False, regex=False
         )
-        matches = course_catalog[name_matches | description_matches]
+        group_matches = course_catalog["Requirement Group"].str.contains(
+            query, case=False, na=False, regex=False
+        )
+        matches = course_catalog[
+            name_matches | description_matches | group_matches
+        ]
 
     if matches.empty:
         return f"No Sacramento State courses found matching '{query}'."

@@ -12,3 +12,12 @@ class GraduationPlan(BaseModel):
     courses: list[PlannedCourse] = Field(description="Courses recommended for the plan")
     assumptions: list[str] = Field(description="Assumptions made when building the plan")
     unresolved_questions: list[str] = Field(description="Information that still needs confirmation")
+class CourseSelection(BaseModel):
+    code: str
+    reason: str
+
+
+class DraftPlan(BaseModel):
+    courses: list[CourseSelection]
+    assumptions: list[str] = Field(default_factory=list)
+    unresolved_questions: list[str] = Field(default_factory=list)
