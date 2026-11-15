@@ -1,41 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Graduation Planner Demo</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <form action="user_submission" method="POST">
-        <label for="sid">Student ID:</label>
-        <input type="text" id="sid" name="sid" placeholder="Enter your student id" required>
+    <div id="app-container">
+        <h1>Graduation Planner</h1>
 
-        <label for="schools">Select your college:</label>
-        <select id="schools" name="school">
-            <option value="csus">California State University, Sacramento</option>
-            <option value="csuc">California State University, Chico</option>
-            <option value="csuf">California State University, Fresno</option>
-        </select>
+        <form action="user_submission" method="POST">
+            <label for="sid">Student ID:</label>
+            <input type="text" id="sid" name="sid" placeholder="Enter your student id" required>
 
-        <label for="major">Major Tag:</label>
-        <input type="text" id="major" name="major" placeholder="CS">
+            <label for="schools">Select your college:</label>
+            <select id="schools" name="school">
+                <option value="csus">California State University, Sacramento</option>
+                <!-- Other campuses are disabled until we have their course data -->
+                <option value="csuc" disabled>California State University, Chico (coming soon)</option>
+                <option value="csuf" disabled>California State University, Fresno (coming soon)</option>
+            </select>
 
-        <!--
-        <label for="intended_semester">Graduation Semester:</label>
-        <input type="text" id="intended_semester" name="intended_semester" placeholder="Spring 2027">
-        -->
-        
-        <label for="min_unit_load">Minimum Units:</label>
-        <input type="text" id="min_unit_load" name="min_unit_load" placeholder="12">
+            <label for="major">Major Tag:</label>
+            <input type="text" id="major" name="major" placeholder="CS">
 
-        <label for="max_unit_load">Maximum Units:</label>
-        <input type="text" id="max_unit_load" name="max_unit_load" placeholder="18">
+            <!--
+            <label for="intended_semester">Graduation Semester:</label>
+            <input type="text" id="intended_semester" name="intended_semester" placeholder="Spring 2027">
+            -->
 
-        <button type="submit">Submit</button>
+            <div class="row">
+                <div>
+                    <label for="min_unit_load">Minimum Units:</label>
+                    <input type="number" id="min_unit_load" name="min_unit_load" placeholder="12" min="0" max="30">
+                </div>
+                <div>
+                    <label for="max_unit_load">Maximum Units:</label>
+                    <input type="number" id="max_unit_load" name="max_unit_load" placeholder="18" min="0" max="30">
+                </div>
+            </div>
+
+            <button type="submit">Submit</button>
         </form>
 
-<pre id="output"></pre>
+        <pre id="output"></pre>
+    </div>
 
     <script src="script.js"></script>
 
