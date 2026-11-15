@@ -23,3 +23,19 @@ text {
     border-radius: 4px;
     cursor: pointer;
 }
+
+/* Form messages (used by script.js) */
+.error-message {
+    color: #b42318;
+    font-weight: 600;
+    margin-top: 12px;
+}
+
+.status-message {
+    color: #52606d;
+    margin-top: 12px;
+}
+
+input[aria-invalid="true"] {
+    border-color: #b42318;
+}
