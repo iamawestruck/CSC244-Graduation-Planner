@@ -1,7 +1,7 @@
 const query = document.getElementById("submit");
 
 (() => {
-  "use strict";
+    "use strict";
 
     const form = document.querySelector("form");
     const output = document.getElementById("output");
@@ -100,6 +100,98 @@ const query = document.getElementById("submit");
         }
     }
 
+    // Where a structured plan is drawn. Created here so index.html does not need to change.
+    const planBox = document.createElement("div");
+    planBox.id = "plan";
+    output.insertAdjacentElement("afterend", planBox);
+
+    // Builds elements with textContent only, so text from the planner is never read as HTML.
+    function el(tag, text, className) {
+        const node = document.createElement(tag);
+        if (text !== undefined) node.textContent = text;
+        if (className) node.className = className;
+        return node;
+    }
+
+    function renderList(title, items) {
+        if (!Array.isArray(items) || items.length === 0) return null;
+        const section = el("section");
+        section.appendChild(el("h2", title));
+        const list = el("ul");
+        items.forEach((item) => list.appendChild(el("li", String(item))));
+        section.appendChild(list);
+        return section;
+    }
+
+    function renderCourses(courses) {
+        const table = el("table");
+        const head = el("tr");
+        ["Course", "Name", "Units", "Why it is in the plan"].forEach((title) => head.appendChild(el("th", title)));
+        table.appendChild(el("thead")).appendChild(head);
+
+        const body = el("tbody");
+        courses.forEach((course) => {
+            const row = el("tr");
+            [course.code, course.name, course.credit_hours, course.reason].forEach((value) => {
+                row.appendChild(el("td", value == null ? "" : String(value)));
+            });
+            body.appendChild(row);
+        });
+        table.appendChild(body);
+        return table;
+    }
+
+    // Accepts the plan itself, or {plan: {...}, validation: {...}}. Returns null if it is not a plan.
+    function renderPlan(data) {
+        const plan = data.plan && typeof data.plan === "object" ? data.plan : data;
+        if (!plan || !Array.isArray(plan.courses)) return null;
+        const validation = data.validation || data.report || null;
+
+        const box = el("div");
+        box.appendChild(el("h2", "Your plan"));
+
+        const totalUnits = plan.courses.reduce((sum, course) => sum + (Number(course.credit_hours) || 0), 0);
+        box.appendChild(el("p", `${plan.courses.length} courses, ${totalUnits} units`, "plan-summary"));
+        if (plan.courses.length > 0) box.appendChild(renderCourses(plan.courses));
+
+        [renderList("Assumptions", plan.assumptions),
+         renderList("Still to confirm", plan.unresolved_questions)].forEach((section) => {
+            if (section) box.appendChild(section);
+        });
+
+        if (validation && typeof validation === "object") {
+            const passed = validation.passed === true;
+            box.appendChild(el("h2", passed ? "Validation: passed" : "Validation: review needed",
+                passed ? "validation-pass" : "validation-review"));
+            [renderList("Issues", validation.issues), renderList("Notes", validation.limitations)].forEach((section) => {
+                if (section) box.appendChild(section);
+            });
+        }
+        return box;
+    }
+
+    function clearResult() {
+        output.textContent = "";
+        planBox.textContent = "";
+    }
+
+    // A plan is drawn as a table; anything else is shown as plain text.
+    function showResult(text) {
+        clearResult();
+        let data = null;
+        try {
+            data = JSON.parse(text);
+        } catch (error) {
+            data = null;
+        }
+        const drawn = data && typeof data === "object" ? renderPlan(data) : null;
+        if (drawn) {
+            planBox.appendChild(drawn);
+        } else {
+            output.textContent = text;
+        }
+    }
+
     async function submitForm() {
         isSubmitting = true;
         const originalLabel = submitButton ? submitButton.textContent : "";
@@ -107,7 +199,7 @@ const query = document.getElementById("submit");
             submitButton.disabled = true;
             submitButton.textContent = "Planning...";
         }
-        output.textContent = "";
+        clearResult();
         showMessage("Planning... this can take a few minutes.", false);
 
         try {
@@ -120,7 +212,7 @@ const query = document.getElementById("submit");
                     `The planner returned an error (HTTP ${response.status}). The backend may not be connected yet.`
                 );
             }
-            output.textContent = await response.text(); // textContent: never interpreted as HTML
+            showResult(await response.text());
             showMessage("", false);
         } catch (error) {
             const text = error instanceof TypeError
