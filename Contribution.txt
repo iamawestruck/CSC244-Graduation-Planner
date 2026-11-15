@@ -1,0 +1,14 @@
+Contribution Statement and Percentage:
+
+- Simrandeep:
+  1. Semester planning improvements
+  2. prerequisite/subset logic
+  3. catalog-backed details
+  4.integration/testing
+  5. demo preparation
+  6. installation documentation.
+  7. Prepared and integrated the Sacramento State course CSV and synthetic student CSV using ChatGPT assistance.
+
+- Elliott:
+
+- Purvika:
