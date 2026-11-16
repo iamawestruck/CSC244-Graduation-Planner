@@ -12,3 +12,10 @@ Contribution Statement and Percentage:
 - Elliott:
 
 - Purvika:
+  1. Frontend development(input form, validation, loading state, plan results table).
+  2. Campus-themed UI design(green and gold theme, background).
+  3. Frontend-to-backend connection(frontend/server.py).
+  4. Planner service(planner_service.py : runs the planner, retries once, returns JSON).
+  5. Added and ran automated tests (pytest) for the server and planner service. All 45 tests in the project pass.
+  6. End-to-end integration and debugging.
+  7. Ran and tested the full frontend-backend flow locally.
