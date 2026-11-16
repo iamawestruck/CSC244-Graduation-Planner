@@ -1,13 +1,12 @@
 Contribution Statement and Percentage:
 
 - Simrandeep:
-  1. Semester planning improvements
-  2. prerequisite/subset logic
-  3. catalog-backed details
-  4.integration/testing
-  5. demo preparation
-  6. installation documentation.
-  7. Prepared and integrated the Sacramento State course CSV and synthetic student CSV using ChatGPT assistance.
+  1. Refactored the main/main2 (intial setup)
+  2.Prepared and integrated the Sacramento State course CSV and synthetic student CSV using ChatGPT assistance.
+  3. Updated student_input_py, validation.py, workflow.py and models.py based on new csv files and to to get the correct semester plan
+  4. implemented planning_check.py
+  5. added automatic subset selection so python can choose a valid set of course within the unit rage inputed by student
+  6. Prepared the intial draft of readme fiels, updated the installation instructions based on the new setup of the code.
 
 - Elliott:
 
