@@ -1,9 +1,9 @@
-pandas
-numpy
-pydantic>=2.0
-python-dotenv
+crewai
 langchain-chroma
 langchain-core
 langchain-ollama
-crewai
+numpy
+pandas
+pydantic>=2.0
 pytest
+python-dotenv

@@ -1,17 +1,17 @@
 const query = document.getElementById("submit");
 
+//immediately invoked and runs while server.py is live
 (() => {
     "use strict";
-
+    //Initial setup, assigning all attributes from index.html to necessary variables
     const form = document.querySelector("form");
     const output = document.getElementById("output");
-    if (!form || !output) return;
+    if (!form || !output) return; //early quit if missing essential elements
 
     const studentId = document.getElementById("sid");
     const minUnits = document.getElementById("min_unit_load");
     const maxUnits = document.getElementById("max_unit_load");
     const submitButton = form.querySelector('button[type="submit"]');
-
     const MAX_UNITS = 30;
     const STORAGE_KEY = "graduationPlanner.form";
     // The student ID is not remembered, so it is never left behind on a shared computer.
@@ -49,6 +49,7 @@ const query = document.getElementById("submit");
         return { value: Number(text) };
     }
 
+    // Requires studentID and checks if units are valid
     function validate() {
         const problems = [];
 
@@ -67,6 +68,7 @@ const query = document.getElementById("submit");
         return problems;
     }
 
+    //marks bad fields with "aria-invalid", this tells screen readers the users input failed validation
     function showProblems(problems) {
         problems.forEach((problem) => problem.input.setAttribute("aria-invalid", "true"));
         showMessage(problems.map((problem) => problem.text).join(" "), true);

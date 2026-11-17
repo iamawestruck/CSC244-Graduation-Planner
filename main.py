@@ -9,18 +9,17 @@ from course_counts import course_count_issues
 from planning_check import eligible_catalog, select_valid_subset
 
 
-def main(argv=None):
+def main(argv=None): # Entry point for our code
     parser = argparse.ArgumentParser(
         description="Create a preliminary semester plan."
     )
-    parser.add_argument("--student-id")
+    parser.add_argument("--student-id") # Optional additional arguments that can be implemented
     parser.add_argument("--dept-course-count", type=int)
     args = parser.parse_args(argv)
 
-    if (
-            args.dept_course_count is not None
-            and args.dept_course_count <= 0
-    ):
+    if (args.dept_course_count is not None
+        and args.dept_course_count <= 0):
+        
         parser.error("--dept-course-count must be positive")
 
     try:
@@ -28,7 +27,7 @@ def main(argv=None):
         completed = profile.get("completed_courses", "")
 
         min_units = int(
-            profile.get("min_unit_load", "").strip() or 0
+            profile.get("min_unit_load", "").strip() or 0 # Sets the minimum/maximum amount of units or offers a default if not given
         )
         max_units = int(
             profile.get("max_unit_load", "").strip() or 18
@@ -85,11 +84,12 @@ def main(argv=None):
         ),
     }
 
+    plan, report = None
     # Initial attempt plus at most one correction attempt.
     for attempt in range(1, 3):
         print(
             f"\nPlanning attempt {attempt}/2...",
-            flush=True,
+            flush=True, # flush clears budder and pushes message to the screen when the line runs
         )
 
         try:
@@ -100,7 +100,7 @@ def main(argv=None):
                     "No structured DraftPlan returned."
                 )
 
-            draft = DraftPlan.model_validate(
+            draft = DraftPlan.model_validate( # Verifies the data fits our model
                 result.pydantic.model_dump()
             )
 
@@ -120,7 +120,7 @@ def main(argv=None):
             )
 
             if attempt == 2:
-                return 1
+                break # Was return 1, however this wouldn't show attempt 1's plan if attempt 2 crashed
 
             inputs["revision_feedback"] = (
                 "Previous attempt failed. Return the requested "
@@ -131,7 +131,7 @@ def main(argv=None):
             continue
 
         if report["passed"]:
-            break
+            break # If current plan meets preliminary goals, stop future attempts
 
         for issue in report["issues"]:
             print(f"- {issue}")
@@ -143,6 +143,10 @@ def main(argv=None):
             "issues_to_fix": report["issues"],
         })
 
+    if plan is None: # This prevents the loss of attempt 1's plan even if it didn't pass validation
+        print("No plan oculd be produced.", file=sys.stderr)
+        return 1
+    
     # Department comparison happens after planning.
     # It does not instruct the AI to select a particular count.
     if args.dept_course_count is not None:
@@ -167,7 +171,8 @@ def main(argv=None):
 
     for note in report.get("selection_notes", []):
         print(f"Selection: {note}")
-    status = "PASS" if report["passed"] else "REVIEW NEEDED"
+
+    status = "PASS" if report["passed"] else "REVIEW NEEDED" # Shows up at the end of the program, checks if preliminary program passes our manual checks
     print(f"\n===== PYTHON VALIDATION: {status} =====")
     print(f"Planned credits: {report['planned_credit_hours']}")
 
@@ -180,5 +185,5 @@ def main(argv=None):
     return 0 if report["passed"] else 1
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # Every Python file has the __name__ variable
     sys.exit(main())

@@ -9,15 +9,15 @@ class PlannedCourse(BaseModel):
 
 
 class GraduationPlan(BaseModel):
-    courses: list[PlannedCourse] = Field(description="Courses recommended for the plan")
+    courses: list[PlannedCourse] = Field(description="Courses recommended for the plan") # Creates a list of our defined class PlannedCourse
     assumptions: list[str] = Field(description="Assumptions made when building the plan")
     unresolved_questions: list[str] = Field(description="Information that still needs confirmation")
+
 class CourseSelection(BaseModel):
     code: str
     reason: str
 
-
 class DraftPlan(BaseModel):
     courses: list[CourseSelection]
-    assumptions: list[str] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list) # default_factory takes zero-argument callables. these are functions, methods, or objects that can be invoked without passing inputs
     unresolved_questions: list[str] = Field(default_factory=list)

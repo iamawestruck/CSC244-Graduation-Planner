@@ -1,16 +1,22 @@
 Contribution Statement and Percentage:
 
-- Simrandeep:
+- Simrandeep (33%):
   1. Refactored the main/main2 (intial setup)
-  2.Prepared and integrated the Sacramento State course CSV and synthetic student CSV using ChatGPT assistance.
+  2. Prepared and integrated the Sacramento State course CSV and synthetic student CSV using ChatGPT assistance.
   3. Updated student_input_py, validation.py, workflow.py and models.py based on new csv files and to to get the correct semester plan
   4. implemented planning_check.py
   5. added automatic subset selection so python can choose a valid set of course within the unit rage inputed by student
   6. Prepared the intial draft of readme fiels, updated the installation instructions based on the new setup of the code.
 
-- Elliott:
+- Elliott (33%):
+  1. Created and uploaded initial implimentation
+  2. Monitored and updated agent information
+  3. Bugfixed and optimized first demo draft
+  4. Started framework for frontend implimentation
+  5. Established a base level of comments for clarity
+  6. Final demo checks before submission
 
-- Purvika:
+- Purvika (33%):
   1. Frontend development(input form, validation, loading state, plan results table).
   2. Campus-themed UI design(green and gold theme, background).
   3. Frontend-to-backend connection(frontend/server.py).

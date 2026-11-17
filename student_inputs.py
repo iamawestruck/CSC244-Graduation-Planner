@@ -7,7 +7,7 @@ def _project_root() -> Path:
     return here.parent if here.name in {"tools", "agents"} else here
 
 
-PROJECT_ROOT = _project_root()
+PROJECT_ROOT = _project_root() # Locates project folders
 STUDENTS_CSV = next(
     (
         candidate
@@ -20,25 +20,25 @@ STUDENTS_CSV = next(
     PROJECT_ROOT / "data" / "sac_state_students.csv",
 )
 
-
+# Load a profile by ID, or the only profile when the CSV has just one
 def load_student(student_id: str | None = None) -> dict[str, str]:
-    """Load a profile by ID, or the only profile when the CSV has just one."""
     if not STUDENTS_CSV.is_file():
         raise FileNotFoundError(
             f"Student CSV not found at {STUDENTS_CSV}. Put it in the project root or data/ folder."
         )
 
-    students = pd.read_csv(STUDENTS_CSV, dtype=str, keep_default_na=False)
+    students = pd.read_csv(STUDENTS_CSV, dtype=str, keep_default_na=False) # keep_default_na keeps empty cells as "" instead of NaN
+
     if "student_id" not in students.columns:
         raise ValueError("Student CSV must contain a 'student_id' column.")
     if students.empty:
         raise ValueError(f"No student profiles were found in {STUDENTS_CSV}.")
 
-    if student_id is None or not str(student_id).strip():
+    if student_id is None or not str(student_id).strip(): # Should implement an additional student_ID to test this for demo
         if len(students) != 1:
             available = ", ".join(students["student_id"].astype(str).tolist())
             raise ValueError(
-                "Pass --student-id to choose a profile. Available IDs: " + available
+                "Pass --student-id to choose a profile. Available IDs: " + available # Shows what student_ID's are accessable to the agent
             )
         return students.iloc[0].to_dict()
 

@@ -7,10 +7,9 @@ from validation import (
     validate_plan,
 )
 
-
+# Check supported prerequisite expressions conservatively
 def prerequisite_status(text, completed, planned):
-    """Check supported prerequisite expressions conservatively."""
-    text = " ".join(str(text or "").upper().split())
+    text = " ".join(str(text or "").upper().split()) # The catalog's prerequisite string
     completed = {
         normalize_course_code(code) for code in completed
     }
@@ -57,6 +56,7 @@ def prerequisite_status(text, completed, planned):
 
     available = completed | (planned & concurrent)
 
+    # Recursive descent parser, translates input string into structured representation
     def evaluate(expression):
         expression = re.sub(
             r",\s*(?=OR\b)",
@@ -73,7 +73,7 @@ def prerequisite_status(text, completed, planned):
         ]
         position = 0
 
-        def atom():
+        def atom(): # Reads one operand, returns True if course code is avaliable
             nonlocal position
 
             if position >= len(tokens):
@@ -101,20 +101,20 @@ def prerequisite_status(text, completed, planned):
                 and token in available
             )
 
-        def both():
-            nonlocal position
+        def both(): # chains AND 
+            nonlocal position # Lets this nested function reassign a variable belonging to the function outside of this
             value = atom()
 
-            while position < len(tokens) and tokens[position] == "AND":
+            while position < len(tokens) and tokens[position] == "AND": # While not at the end of the clause, repeat
                 position += 1
                 right = atom()
                 value = value and right
 
             return value
 
-        def either():
+        def either(): # chains OR
             nonlocal position
-            value = both()
+            value = both() # calls both to give AND higher precedence. A OR B AND C means A OR (B AND C)
 
             while position < len(tokens) and tokens[position] == "OR":
                 position += 1
@@ -144,8 +144,8 @@ def prerequisite_status(text, completed, planned):
     return False, f"Unmet or unverified prerequisite conditions: {text}"
 
 
+# Read a fixed credit value; variable credits need manual selection
 def fixed_credits(row):
-    """Read a fixed credit value; variable credits need manual selection."""
     match = re.fullmatch(
         r"(\d+)\s*(?:hours?|units?)\.?",
         str(row["Credit Hours"]).strip(),
@@ -154,6 +154,7 @@ def fixed_credits(row):
     return int(match.group(1)) if match else None
 
 
+# Filters course catalog to courses a student could take next
 def eligible_catalog(catalog, completed_courses):
     completed = parse_course_set(completed_courses)
     candidates = {}
@@ -190,6 +191,7 @@ def eligible_catalog(catalog, completed_courses):
             del candidates[code]
 
 
+# Converts model's draft into plan with a validation report
 def build_checked_plan(
         draft,
         candidates,
@@ -204,13 +206,13 @@ def build_checked_plan(
         code = normalize_course_code(selection.code)
         row = candidates.get(code)
 
-        if row is None:
+        if row is None: # Catches fake codes/courses
             errors.append(
                 f"{code} is not in the eligible candidate list."
             )
             continue
 
-        # Names and credits come from the CSV, not the AI.
+        # Names and credits come from the CSV, not the AI
         courses.append(
             PlannedCourse(
                 code=code,
@@ -220,12 +222,13 @@ def build_checked_plan(
             )
         )
 
-    plan = GraduationPlan(
+    plan = GraduationPlan( # Model from models.py
         courses=courses,
         assumptions=draft.assumptions,
         unresolved_questions=draft.unresolved_questions,
     )
 
+    # Checks for duplicates, completed courses, unit range, and empty
     report = validate_plan(
         plan,
         min_units,

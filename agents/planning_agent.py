@@ -7,8 +7,8 @@ from tools.course_tools import retrieve_courses, search_courses, get_course
 planning_agent = Agent(
     role="Graduation Planning Specialist",
     goal=(
-        "Turn verified course information and student priorities "
-        "into a useful preliminary graduation plan."
+        "Take verified course information and student priorities, "
+        "turn it into a useful preliminary graduation plan."
     ),
     backstory=(
         "You help students organize courses into a potential "

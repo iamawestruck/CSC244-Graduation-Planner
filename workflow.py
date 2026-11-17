@@ -1,5 +1,6 @@
 from crewai import Crew, Process, Task
 from agents.planning_agent import planning_agent
+from agents.course_agent import course_agent
 from models import DraftPlan
 
 
@@ -45,9 +46,9 @@ def make_planning_crew():
         tools=[],
     )
 
-    return Crew(
-        agents=[planning_agent],
+    return Crew( # Currently EXTREMELY STRICT, agents aren't given tools, majority of work is hard coded
+        agents=[course_agent, planning_agent],
         tasks=[task],
-        process=Process.sequential,
+        process=Process.sequential, # Process.heirarchical
         verbose=True,
     )
