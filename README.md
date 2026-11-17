@@ -54,7 +54,7 @@ Download the ZIP and extract it. Open a terminal in the extracted folder contain
 
 Option 2: DOWNLOAD USING GitHub DESKTOP(main)
 1.	Select File > Clone Repository > URL
-2.	Enter the repo URL: https://github.com/iamawestruck/CSC244-Graduation-Planner/tree/simran2.0
+2.	Enter the repo URL: https://github.com/iamawestruck/CSC244-Graduation-Planner/tree/main
 3.	Choose local path and Clone
 4.	Once the repository is saved locally, you can pull it to your device. Preferably through the “Open in Visual Studio Code”  
 
