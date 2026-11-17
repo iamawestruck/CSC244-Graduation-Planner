@@ -1,162 +1,189 @@
-from schedule import check_schedule_conflicts
+import argparse
+import json
+import sys
+
+from models import DraftPlan
 from student_inputs import load_student
-from validation import (
-    find_catalog_course,
-    parse_course_list,
-    validate_plan,
-)
-from workflow import planning_crew
-
-MAX_ATTEMPTS = 2
-STUDENT_ID = "SYNTHETIC_001"
+from tools.course_tools import course_catalog
+from course_counts import course_count_issues
+from planning_check import eligible_catalog, select_valid_subset
 
 
-def build_required_course_catalog(
-        required_courses: str,
-        completed_courses: str,
-) -> tuple[str, list[str]]:
-    required = parse_course_list(required_courses)
-    completed = parse_course_list(completed_courses)
-    uncompleted = sorted(required - completed)
+def main(argv=None): # Entry point for our code
+    parser = argparse.ArgumentParser(
+        description="Create a preliminary semester plan."
+    )
+    parser.add_argument("--student-id") # Optional additional arguments that can be implemented
+    parser.add_argument("--dept-course-count", type=int)
+    args = parser.parse_args(argv)
 
-    if not uncompleted:
-        return "No uncompleted required courses.", []
-
-    details = []
-    missing_codes = []
-
-    for code in uncompleted:
-        row = find_catalog_course(code)
-
-        if row is None:
-            details.append(f"{code}: NOT FOUND in the catalog.")
-            missing_codes.append(code)
-        else:
-            details.append(
-                f"{code}: FOUND. "
-                f"Name: {row['Name']}. "
-                f"Credit hours: {row['Credit Hours']}."
-            )
-
-    return "\n".join(details), missing_codes
-
-
-student = load_student(STUDENT_ID)
-
-base_inputs = {
-    "intended_semester": student["intended_semester"],
-    "major": student["major"],
-    "catalog_year": student["catalog_year"],
-    "preferences": student["preferences"],
-    "completed_courses": student["completed_courses"],
-    "current_courses": student["current_courses"],
-    "failed_courses": student["failed_courses"],
-    "required_courses": student["remaining_required_courses"],
-    "remaining_choice_groups": student["remaining_choice_groups"],
-    "min_unit_load": int(student["min_unit_load"]),
-    "unit_limit": int(student["unit_limit"]),
-}
-
-(
-    base_inputs["required_course_catalog"],
-    missing_required_codes,
-) = build_required_course_catalog(
-    base_inputs["required_courses"],
-    base_inputs["completed_courses"],
-)
-
-print("\n--- Required course catalog check ---")
-if missing_required_codes:
-    print("Not found:", ", ".join(missing_required_codes))
-else:
-    print("All uncompleted required courses are in the catalog.")
-
-revision_feedback = "Create the initial semester plan."
-final_plan = None
-final_validation = None
-
-for attempt in range(1, MAX_ATTEMPTS + 1):
-    print(f"\n--- Planning attempt {attempt} ---")
+    if (args.dept_course_count is not None
+        and args.dept_course_count <= 0):
+        
+        parser.error("--dept-course-count must be positive")
 
     try:
-        result = planning_crew.kickoff(
-            inputs={
-                **base_inputs,
-                "revision_feedback": revision_feedback,
-            }
+        profile = load_student(args.student_id)
+        completed = profile.get("completed_courses", "")
+
+        min_units = int(
+            profile.get("min_unit_load", "").strip() or 0 # Sets the minimum/maximum amount of units or offers a default if not given
         )
-    except Exception as exc:
-        print("\n--- Planner error ---")
-        print(exc)
-        final_validation = {
-            "passed": False,
-            "issues": [f"Planner failed: {exc}"],
-        }
-        break
-
-    task_output = result.tasks_output[0] if result.tasks_output else None
-    plan = task_output.pydantic if task_output else None
-
-    if plan is None:
-        issues = [
-            "The planner did not return a valid GraduationPlan."
-        ]
-        final_validation = {
-            "passed": False,
-            "issues": issues,
-        }
-    else:
-        final_plan = plan
-
-        validation = validate_plan(
-            plan=plan,
-            min_unit_load=base_inputs["min_unit_load"],
-            unit_limit=base_inputs["unit_limit"],
-            required_courses=base_inputs["required_courses"],
-            completed_courses=base_inputs["completed_courses"],
-            current_courses=base_inputs["current_courses"],
-        )
-        final_validation = validation
-
-        schedule_result = check_schedule_conflicts(
-            [course.code for course in plan.courses]
+        max_units = int(
+            profile.get("max_unit_load", "").strip() or 18
         )
 
-        print("\n--- Synthetic schedule check (mock data) ---")
-        print(schedule_result)
-
-        print("\n--- Proposed plan ---")
-        print(plan.model_dump_json(indent=2))
-
-        print("\n--- Catalog and unit-range validation ---")
-        print(validation)
-
-        if validation["passed"]:
-            print("\nPlan passed catalog and unit-range checks.")
-            break
-
-        issues = validation["issues"]
-        if not schedule_result["passed"]:
-            issues.extend(
-                f"Mock schedule check: {issue}"
-                for issue in schedule_result["issues"]
+        if not 0 <= min_units <= max_units:
+            raise ValueError(
+                "Unit range must satisfy 0 <= minimum <= maximum."
             )
 
-    revision_feedback = (
-            "Revise the plan to address these validation issues. "
-            "Keep valid courses and use only verified catalog information.\n"
-            + "\n".join(f"- {issue}" for issue in issues)
-    )
-else:
+        candidates = eligible_catalog(course_catalog, completed)
+
+        if not candidates:
+            raise ValueError(
+                "No supported candidates; "
+                "catalog/eligibility needs review."
+            )
+
+        from workflow import make_planning_crew
+
+    except Exception as exc:
+        print(
+            f"Could not initialize planner: "
+            f"{type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 1
+
+    inputs = {
+        "intended_semester": profile.get(
+            "intended_semester", "Not supplied"
+        ),
+        "major": profile.get("major", "Not supplied"),
+        "completed_courses": completed,
+        "preferences": profile.get(
+            "preferences", "None supplied"
+        ),
+        "required_courses": profile.get(
+            "remaining_required_courses", ""
+        ),
+        "remaining_choice_groups": profile.get(
+            "remaining_choice_groups", ""
+        ),
+        "min_unit_load": min_units,
+        "max_unit_load": max_units,
+        "course_candidates": "\n".join(
+            f"{code} | {row['Name']} | {row['Credit Hours']} | "
+            f"{row['Requirement Group']} | "
+            f"Prerequisites: {row['Prerequisites']}"
+            for code, row in candidates.items()
+        ),
+        "revision_feedback": (
+            "First attempt; no previous selection."
+        ),
+    }
+
+    plan, report = None
+    # Initial attempt plus at most one correction attempt.
+    for attempt in range(1, 3):
+        print(
+            f"\nPlanning attempt {attempt}/2...",
+            flush=True, # flush clears budder and pushes message to the screen when the line runs
+        )
+
+        try:
+            result = make_planning_crew().kickoff(inputs=inputs)
+
+            if result.pydantic is None:
+                raise ValueError(
+                    "No structured DraftPlan returned."
+                )
+
+            draft = DraftPlan.model_validate( # Verifies the data fits our model
+                result.pydantic.model_dump()
+            )
+
+            plan, report = select_valid_subset(
+                draft,
+                candidates,
+                completed,
+                min_units,
+                max_units,
+                required_courses=inputs["required_courses"],
+            )
+
+        except Exception as exc:
+            print(
+                f"Attempt failed: {type(exc).__name__}: {exc}",
+                file=sys.stderr,
+            )
+
+            if attempt == 2:
+                break # Was return 1, however this wouldn't show attempt 1's plan if attempt 2 crashed
+
+            inputs["revision_feedback"] = (
+                "Previous attempt failed. Return the requested "
+                "DraftPlan JSON with courses containing only code "
+                "and reason, plus assumptions and "
+                "unresolved_questions."
+            )
+            continue
+
+        if report["passed"]:
+            break # If current plan meets preliminary goals, stop future attempts
+
+        for issue in report["issues"]:
+            print(f"- {issue}")
+
+        inputs["revision_feedback"] = json.dumps({
+            "previous_codes": [
+                course.code for course in draft.courses
+            ],
+            "issues_to_fix": report["issues"],
+        })
+
+    if plan is None: # This prevents the loss of attempt 1's plan even if it didn't pass validation
+        print("No plan oculd be produced.", file=sys.stderr)
+        return 1
+    
+    # Department comparison happens after planning.
+    # It does not instruct the AI to select a particular count.
+    if args.dept_course_count is not None:
+        report["issues"].extend(
+            course_count_issues(
+                planned_count=len(plan.courses),
+                min_units=min_units,
+                max_units=max_units,
+                dept_target=args.dept_course_count,
+            )
+        )
+        report["passed"] = not report["issues"]
+
+    print("\n===== PRELIMINARY GRADUATION PLAN =====\n")
     print(
-        f"\nPlanning stopped after {MAX_ATTEMPTS} attempt(s). "
-        "The plan may need review."
+        json.dumps(
+            plan.model_dump(exclude={"unresolved_questions"}),
+            indent=2,
+            ensure_ascii=False,
+        )
     )
 
-if final_plan is not None:
-    print("\n--- Final plan ---")
-    print(final_plan.model_dump_json(indent=2))
+    for note in report.get("selection_notes", []):
+        print(f"Selection: {note}")
 
-if final_validation is not None:
-    print("\n--- Final validation status ---")
-    print(final_validation)
+    status = "PASS" if report["passed"] else "REVIEW NEEDED" # Shows up at the end of the program, checks if preliminary program passes our manual checks
+    print(f"\n===== PYTHON VALIDATION: {status} =====")
+    print(f"Planned credits: {report['planned_credit_hours']}")
+
+    for issue in report["issues"]:
+        print(f"- {issue}")
+
+    for limitation in report["limitations"]:
+        print(f"Note: {limitation}")
+
+    return 0 if report["passed"] else 1
+
+
+if __name__ == "__main__": # Every Python file has the __name__ variable
+    sys.exit(main())

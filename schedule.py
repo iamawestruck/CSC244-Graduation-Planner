@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
-
 from tools.course_tools import courses as raw_courses
+
 
 
 def normalize_days(value):
@@ -17,9 +17,12 @@ def parse_meeting_time(value):
     """Parse times such as '09:00 AM'; return None if unavailable."""
     value = str(value).strip().upper()
 
-    if not value or value == "ARRANGED":
+    if not value:
         return None
 
+    if value == "ARRANGED":
+        return "CUSTOM"
+    
     try:
         return datetime.strptime(value, "%I:%M %p").time()
     except ValueError:
@@ -91,76 +94,110 @@ def check_schedule_conflicts(course_codes):
             start = parse_meeting_time(row["Start Time"])
             end = parse_meeting_time(row["End Time"])
 
-            if not days or start is None or end is None or start >= end:
+            day_text = str(row["Days of Week"]).strip().upper()
+            if not re.fullmatch(r"[MTWRFSU\s,/]+", day_text):
+                continue
+
+            if not days or start in (None, "CUSTOM") or end in (None, "CUSTOM"):
+                continue
+
+            if start >= end:
                 continue
 
             options.append({
+                "term": term,
                 "days": days,
-                "start": start,
-                "end": end,
-                "display": (
-                    f"{row['Subject']} {row['Number']} "
-                    f"Section {row.get('Section', '')}: "
-                    f"{row['Days of Week']} "
-                    f"{row['Start Time']}-{row['End Time']}"
+                "start_time": start,
+                "end_time": end,
+                "section_status": str(
+                    row.get("Section Status", "Not specified")
                 ),
             })
 
         return options
 
-    def overlaps(section_a, section_b):
-        shared_days = section_a["days"] & section_b["days"]
-        return bool(shared_days) and (
-                section_a["start"] < section_b["end"]
-                and section_b["start"] < section_a["end"]
+    def overlaps(first, second):
+        return bool(first["days"] & second["days"]) and (
+                first["start_time"] < second["end_time"]
+                and second["start_time"] < first["end_time"]
         )
 
+    def select_sections(codes, options, selected, index=0):
+        if index == len(codes):
+            return selected.copy()
+
+        code = codes[index]
+
+        for option in options[code]:
+            if any(overlaps(option, other) for other in selected):
+                continue
+
+            selected.append({"code": code, **option})
+
+            result = select_sections(
+                codes, options, selected, index + 1
+            )
+
+            if result is not None:
+                return result
+
+            # Try another section if this choice leads to a conflict.
+            selected.pop()
+
+        return None
+
+    codes = list(course_rows)
+
     for term in sorted(common_terms):
-        options_by_course = {
+        if not term.strip() or term.strip().lower() in {
+            "nan", "none", "<na>"
+        }:
+            continue
+
+        options = {
             code: get_options(rows, term)
             for code, rows in course_rows.items()
         }
 
-        if any(not options for options in options_by_course.values()):
+        if any(not sections for sections in options.values()):
             continue
 
-        ordered_courses = sorted(
-            options_by_course,
-            key=lambda code: len(options_by_course[code]),
-        )
-        selected = []
+        selected = select_sections(codes, options, [])
 
-        def find_combination(index):
-            if index == len(ordered_courses):
-                return True
+        if selected is not None:
+            for section in selected:
+                section["days"] = "".join(
+                    day for day in "MTWRFSU"
+                    if day in section["days"]
+                )
+                section["start_time"] = (
+                    section["start_time"].strftime("%I:%M %p")
+                )
+                section["end_time"] = (
+                    section["end_time"].strftime("%I:%M %p")
+                )
 
-            code = ordered_courses[index]
-            for option in options_by_course[code]:
-                if any(overlaps(option, chosen) for chosen in selected):
-                    continue
-
-                selected.append(option)
-                if find_combination(index + 1):
-                    return True
-                selected.pop()
-
-            return False
-
-        if find_combination(0):
             return {
                 "passed": True,
-                "term": term,
                 "issues": [],
-                "selected_sections": [
-                    option["display"] for option in selected
+                "selected_sections": selected,
+                "limitations": [
+                    "Checks only the supplied CSV meeting times. "
+                    "Synthetic rows are demo data.",
+                    "Each row is assumed to be a complete section; "
+                    "linked lectures/labs need separate handling.",
+                    "The common CSV term may differ from the "
+                    "student's intended semester.",
                 ],
             }
 
     return {
         "passed": False,
         "issues": [
-            "No conflict-free combination of sections with known meeting "
-            "days and times was found."
+            "No conflict-free combination could be verified. "
+            "Sections may overlap or have missing, invalid, "
+            "or ARRANGED meeting details."
         ],
         "selected_sections": [],
     }
+

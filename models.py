@@ -1,22 +1,23 @@
 from pydantic import BaseModel, Field
 
-
+#defines new classes we use in our code
 class PlannedCourse(BaseModel):
-    code: str = Field(description="Course code, such as CS 201")
+    code: str = Field(description="Course code, such as CSC 131")
     name: str = Field(description="Course name verified in the catalog")
-    credit_hours: int = Field(
-        description="The number of credit hours selected for this plan"
-    )
+    credit_hours: int = Field(description="The number of credit hours selected for this plan")
     reason: str = Field(description="Why this course is included in the plan")
 
 
 class GraduationPlan(BaseModel):
-    courses: list[PlannedCourse] = Field(
-        description="Courses recommended for the plan"
-    )
-    assumptions: list[str] = Field(
-        description="Assumptions made when building the plan"
-    )
-    unresolved_questions: list[str] = Field(
-        description="Information that still needs confirmation"
-    )
+    courses: list[PlannedCourse] = Field(description="Courses recommended for the plan") # Creates a list of our defined class PlannedCourse
+    assumptions: list[str] = Field(description="Assumptions made when building the plan")
+    unresolved_questions: list[str] = Field(description="Information that still needs confirmation")
+
+class CourseSelection(BaseModel):
+    code: str
+    reason: str
+
+class DraftPlan(BaseModel):
+    courses: list[CourseSelection]
+    assumptions: list[str] = Field(default_factory=list) # default_factory takes zero-argument callables. these are functions, methods, or objects that can be invoked without passing inputs
+    unresolved_questions: list[str] = Field(default_factory=list)

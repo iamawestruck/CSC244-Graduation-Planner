@@ -1,0 +1,9 @@
+crewai
+langchain-chroma
+langchain-core
+langchain-ollama
+numpy
+pandas
+pydantic>=2.0
+pytest
+python-dotenv

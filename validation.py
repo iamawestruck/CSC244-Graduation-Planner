@@ -1,15 +1,18 @@
-import re
+import re #regex
 
 from models import GraduationPlan
 from tools.course_tools import course_catalog
 
 
+# Standardizes different formats of codes for further use
 def normalize_course_code(code: str) -> str:
+    
     return " ".join(str(code).strip().upper().split())
 
 
-def parse_course_list(value: str) -> set[str]:
-    """Convert a comma-separated course list to normalized codes."""
+# Converts individual courses into a normalized course set, set prevents duplicates
+def parse_course_set(value: str) -> set[str]:
+    
     return {
         normalize_course_code(course)
         for course in str(value or "").split(",")
@@ -17,141 +20,168 @@ def parse_course_list(value: str) -> set[str]:
     }
 
 
+# Looks up a single course in the catalog DataFrame by its code, returns its row or None
 def find_catalog_course(code: str):
-    """Find a course by its subject and number."""
-    match = re.fullmatch(r"([A-Z]+)\s+([A-Z0-9]+)", normalize_course_code(code))
+    match = re.fullmatch(
+        r"([A-Z]+)\s+([A-Z0-9]+)", # This requires string to be letters, whitespace, then letters/digits
+        normalize_course_code(code), 
+    ) 
 
     if not match:
         return None
 
-    subject, number = match.groups()
+    subject, number = match.groups() # Used for readability
 
     matches = course_catalog[
-        course_catalog["Subject"].str.strip().str.upper().eq(subject)
-        & course_catalog["Number"].str.strip().str.upper().eq(number)
+        course_catalog["Subject"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+        .eq(subject) # could be .eq(match[1])
+        & course_catalog["Number"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+        .eq(number) # could be .eq(match[2])
         ]
 
     if matches.empty:
         return None
 
-    return matches.iloc[0]
+    return matches.iloc[0] # Returns first matching code
 
 
+#Returns True or False based on if the credit amount is valid
 def credit_hours_allowed(catalog_value: str, selected: int) -> bool:
-    """Check a selected credit amount against catalog values like '3 hours.' or '1 TO 12 hours.'."""
-    text = str(catalog_value).upper()
-    numbers = [int(number) for number in re.findall(r"\d+", text)]
+    """Check fixed credits, ranges, or two explicit alternatives."""
+    text = str(catalog_value).upper().strip()
 
-    if not numbers:
+    # Examples: "3 hours.", "1 TO 12 hours.", "1 OR 3 hours."
+    match = re.fullmatch( # Requires a strict match
+        r"(\d+)(?:\s*(TO|OR|-)\s*(\d+))?" #(?......?) makes chunk optional
+        r"\s*(?:HOURS?|UNITS?)\.?",
+        text,
+    )
+
+    if not match:
         return False
 
-    if "OR" in text:
-        return selected in numbers
+    first = int(match.group(1))
+    operator = match.group(2) # No if match.group(2) else None needed because of initial match creation
+    second = int(match.group(3)) if match.group(3) else None
 
-    if "TO" in text and len(numbers) >= 2:
-        return numbers[0] <= selected <= numbers[1]
+    if operator in {"TO", "-"}:
+        return first <= selected <= second # Will return true if equation is valid
+    elif operator == "OR":
+        return selected in {first, second}
+    else:
+        return selected == first
 
-    return selected == numbers[0]
+
+# Collects a list of issues and returns them at the end of the terminal after running the code alongside the preliminary plan
 def validate_plan(
-
-        plan: GraduationPlan,
+        plan: GraduationPlan, # Allows for quick changing of model
         min_unit_load: int,
-        unit_limit: int,
-        required_courses: str = "",
+        max_unit_load: int,
         completed_courses: str = "",
-        current_courses: str = "",
 ) -> dict:
-    """Check catalog details, course repeats, required-course priority, and unit range."""
+
+    if min_unit_load < 0 or max_unit_load < min_unit_load:
+        issues.append(
+            "Invalid unit range: minimum must be nonnegative "
+            "and maximum must be at least the minimum."
+        )
+
     issues = []
+
     planned_codes = [
         normalize_course_code(course.code)
         for course in plan.courses
     ]
 
-    duplicates = sorted({
-        code for code in planned_codes
+    duplicates = sorted({ # This is a sorted set, shows each entry once and in alphabetical order
+        code for code in planned_codes # both 'code' play different rolls
         if planned_codes.count(code) > 1
     })
+
     if duplicates:
-        issues.append(f"Duplicate courses in plan: {', '.join(duplicates)}")
+        issues.append(
+            f"Duplicate courses in plan: {', '.join(duplicates)}"
+        )
 
-    completed = parse_course_list(completed_courses)
-    current = parse_course_list(current_courses)
-    already_taken = completed | current
+    if not plan.courses:
+        issues.append("The plan contains no courses.")    
 
+    completed = parse_course_set(completed_courses)
     total_planned_credits = 0
-    catalog_verified = []
 
-    for course, code in zip(plan.courses, planned_codes):
-        if code in already_taken:
-            issues.append(f"{code} is already completed or in progress.")
+    for course, code in zip(plan.courses, planned_codes): # Pairs plan.courses and planned_codes into a tuple
+        if code in completed:
+            issues.append(f"{code} is already completed.")
 
-        selected_credits = course.credit_hours
+        selected_credits = course.credit_hours # Checks credits of current course in loop
+
         if selected_credits <= 0:
             issues.append(
-                f"{code} has an invalid credit amount: {selected_credits}."
+                f"{code} has an invalid credit amount: "
+                f"{selected_credits}."
             )
         else:
+            # Sum the model's reported credits.
+            # Catalog mismatches are flagged separately below.
             total_planned_credits += selected_credits
 
         catalog_row = find_catalog_course(code)
+
         if catalog_row is None:
-            issues.append(f"{code} was not found in the provided catalog.")
+            issues.append(
+                f"{code} was not found in the supplied catalog."
+            )
             continue
 
-        catalog_verified.append(code)
         catalog_name = str(catalog_row["Name"]).strip()
-        catalog_credits = str(catalog_row["Credit Hours"])
+        selected_name = " ".join(str(course.name).split())
+        normalized_catalog_name = " ".join(catalog_name.split())
 
-        if course.name.strip().casefold() != catalog_name.casefold():
+        if selected_name.casefold() != normalized_catalog_name.casefold(): # Checks for discrepancies 
             issues.append(
-                f"{code} has a course-name mismatch. "
-                f"Catalog name: '{catalog_name}'; proposed name: '{course.name}'."
+                f"{code} has an incorrect name: {course.name!r}. "
+                f"Catalog name: {catalog_name!r}."
             )
+
+        catalog_credits = str(catalog_row["Credit Hours"]).strip()
 
         if not credit_hours_allowed(catalog_credits, selected_credits):
             issues.append(
-                f"{code} has an invalid credit selection of {selected_credits}. "
-                f"Catalog entry: '{catalog_credits}'."
+                f"{code} has unsupported or unverifiable credits: "
+                f"{selected_credits}. "
+                f"Catalog value: {catalog_credits!r}."
             )
-
-    required = parse_course_list(required_courses)
-    required_to_schedule = required - completed - current
-    cataloged_required = {
-        code for code in required_to_schedule
-        if find_catalog_course(code) is not None
-    }
-
-    if cataloged_required and not (cataloged_required & set(planned_codes)):
+            
+    if total_planned_credits < min_unit_load:
         issues.append(
-            "Plan does not include an unfinished required course found in the catalog."
+            f"Planned credits ({total_planned_credits}) are below "
+            f"the required minimum of ({min_unit_load})."
         )
 
-    if min_unit_load > unit_limit:
+    if total_planned_credits > max_unit_load:
         issues.append(
-            f"Invalid unit range: minimum is {min_unit_load}, "
-            f"but maximum is {unit_limit}."
-        )
-    elif total_planned_credits < min_unit_load:
-        issues.append(
-            f"Unit load is below the minimum: plan has {total_planned_credits} "
-            f"units; minimum is {min_unit_load}."
+            f"Planned credits ({total_planned_credits}) are above "
+            f"the required maximum of ({max_unit_load})."
         )
 
-    if total_planned_credits > unit_limit:
-        issues.append(
-            f"Unit limit exceeded: plan has {total_planned_credits} units; "
-            f"the limit is {unit_limit}."
-        )
-
-    return {
-        "passed": not issues,
-        "issues": issues,
-        "planned_credit_hours": total_planned_credits,
-        "min_unit_load": min_unit_load,
-        "unit_limit": unit_limit,
-        "catalog_verified_courses": catalog_verified,
-        "limitations": [
-            "This check does not verify prerequisites or actual course availability."
+    return { # Returns a dictionary
+        "passed": not issues, # Returns a Boolean, used to define if preliminary plan PASS or REVIEW NEEDED. Reports True if no issues 
+        "planned_credit_hours": total_planned_credits, # int
+        "issues": issues, # list[str]
+        "limitations": [ # list[str]
+            "Credit totals sum the model-reported positive credits; "
+            "catalog mismatches are reported separately.",
+            "Prerequisites, concurrent enrollment, permissions, "
+            "and other enrollment restrictions are not checked.",
+            "Degree requirement fulfillment and course-selection "
+            "reasons are not checked.",
+            "Actual section availability and schedule conflicts "
+            "are not checked.",
         ],
     }
