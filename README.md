@@ -46,7 +46,7 @@ The current working demo is on Simran2.0(for now, not merged into main)
 
 Option 1: DOWNLOADING USING THE TERMINAL
 1.	Clone the working branch in the folder where you want to download the project
-git clone --branch simran2.0 https://github.com/iamawestruck/CSC244-Graduation-Planner.git
+git clone https://github.com/iamawestruck/CSC244-Graduation-Planner.git
 2.	Change the directory to CSC244-Graduation-Planner
 cd CSC244-Graduation-Planner
 3.	Continue with the environment setup given below.
