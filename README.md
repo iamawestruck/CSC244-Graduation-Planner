@@ -38,7 +38,6 @@ https://github.com/user-attachments/assets/82658560-a2aa-4694-8a59-c261c0ba2ff4
 
 
 **Installation instruction**
-Installation Instructions:
 Required software:
 •	Python 3.11
 •	Ollama
