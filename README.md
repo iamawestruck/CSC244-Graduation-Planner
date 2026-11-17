@@ -1,5 +1,5 @@
 **Project Overview**
-The goal for the project is create a course plan for the student for upcoming semester using the Python framework CrewAI and local Ollama model. Currently, project uses two types of csv files: California state University's Computer Science course catalog and a mock student profile. Python supplies catalog details and checks the selection against supported pre-req conditions, completed courses and the requested unit range.
+The goal for the project is to create a course plan for the students upcoming semester using the Python framework CrewAI and local Ollama model. Currently, the project uses two types of csv files: California state University's Computer Science course catalog and a mock student profile. Python supplies catalog details and checks the selection against supported pre-req conditions, completed courses and the requested unit range.
 
 <img width="975" height="336" alt="image" src="https://github.com/user-attachments/assets/6c58f1f7-7568-4d56-8441-7e4cb3b81b57" />
 
