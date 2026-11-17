@@ -38,13 +38,14 @@ https://github.com/user-attachments/assets/82658560-a2aa-4694-8a59-c261c0ba2ff4
 
 
 **Installation instruction**
+
 Required software:
 •	Python 3.11
 •	Ollama
 The current working demo is on Simran2.0(for now, not merged into main)
 
 Option 1: DOWNLOADING USING THE TERMINAL
-1.	Clone the working branch  in the folder where you want to download the project
+1.	Clone the working branch in the folder where you want to download the project
 git clone --branch simran2.0 https://github.com/iamawestruck/CSC244-Graduation-Planner.git
 2.	Change the directory to CSC244-Graduation-Planner
 cd CSC244-Graduation-Planner
@@ -52,9 +53,10 @@ cd CSC244-Graduation-Planner
 Download the ZIP and extract it. Open a terminal in the extracted folder containing main.py and requirements.txt
 
 Option 2: DOWNLOAD USING GitHub DESKTOP(main)
-1.	Select File  Clone Repository  URL
+1.	Select File > Clone Repository > URL
 2.	Enter the repo URL: https://github.com/iamawestruck/CSC244-Graduation-Planner/tree/simran2.0
-3.	Once the repository is saved locally, you can pull it to your device. Preferably through the “Open in Visual Studio Code”  
+3.	Choose local path and Clone
+4.	Once the repository is saved locally, you can pull it to your device. Preferably through the “Open in Visual Studio Code”  
 
 SET UP THE ENVIRONMENT
 1.	Create a virtual environment
